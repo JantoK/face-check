@@ -1,7 +1,8 @@
 const faceapi = require('face-api.js');
 
 async function loadModels() {
-    await faceapi.nets.ssdMobilenetv1.loadFromDisk('./face-api-weights');
+    await faceapi.nets.tinyFaceDetector.loadFromDisk('./face-api-weights');
+    // await faceapi.nets.ssdMobilenetv1.loadFromDisk('./face-api-weights');
     await faceapi.nets.faceLandmark68Net.loadFromDisk('./face-api-weights');
     await faceapi.nets.faceRecognitionNet.loadFromDisk('./face-api-weights');
 }
