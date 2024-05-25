@@ -1,22 +1,16 @@
 var express = require('express');
 var router = express.Router();
+
+const canvas = require('canvas')
+
 const multer  = require('multer');
 const upload = multer(); // 使用默认配置
-const bodyParser = require('body-parser');
-const canvas = require('canvas')
+// const bodyParser = require('body-parser');
 const faceapi = require('../middleware/faceApiController');
-const { Canvas, Image, ImageData } = canvas
-faceapi.env.monkeyPatch({ Canvas, Image, ImageData })
 const Jimp = require('jimp')
-import '@tensorflow/tfjs-node';
 
-router.use(bodyParser.json({ limit: '10mb' }));  // Increase limit if necessary
 /* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
-});
-
-router.post('/test', upload.single('imgFile') ,async function(req, res, next) {
+router.post('/haveface', upload.single('imgFile') ,async function(req, res, next) {
     try {
         // 图片文件
         const imgFile = req.file;
@@ -26,7 +20,6 @@ router.post('/test', upload.single('imgFile') ,async function(req, res, next) {
         if (!imgFile && !imgUrl) {
             return res.status(400).send({
                 code: 400,
-                data: '',
                 message: '上传参数不正确'
             });
         }
@@ -44,8 +37,8 @@ router.post('/test', upload.single('imgFile') ,async function(req, res, next) {
         }
         // 将图片从二进制转为canvas
         img = await canvas.loadImage(imgBuffer);
-        // const faceDescription = await faceapi.detectAllFaces(img, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }));
-        let faceDescription = await faceapi.detectAllFaces(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 1024, scoreThreshold: 0.4}));
+        let faceDescription = await faceapi.detectAllFaces(img, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }));
+        // let faceDescription = await faceapi.detectAllFaces(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.4}));
         console.log(faceDescription)
         if (faceDescription.length === 0) { // 未检测到人脸
             for(let i = 0; i<3; i++){
@@ -62,8 +55,9 @@ router.post('/test', upload.single('imgFile') ,async function(req, res, next) {
                 img = await canvas.loadImage(imgBuffer);
                 
                 // 重新进行人脸检测
-                faceDescription = await faceapi.detectAllFaces(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 1024, scoreThreshold: 0.4 }));
-                
+                // faceDescription = await faceapi.detectAllFaces(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 1024, scoreThreshold: 0.4 }));
+                faceDescription = await faceapi.detectAllFaces(img, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }));
+
                 if (faceDescription.length !== 0) {
                     break;
                 }
@@ -72,30 +66,24 @@ router.post('/test', upload.single('imgFile') ,async function(req, res, next) {
         if (faceDescription.length === 0) { // 没有有面部识别信息
             res.status(200).send({
                 code: 204,
-                message: '未检测到人脸，请重新上传图片',
-                data: ''
-
+                message: '未检测到人脸，请重新上传图片'
             });
         } else if(faceDescription.length === 1 ) { // 仅有1张人脸信息
             res.status(200).send({
                 code: 200,
-                message: '检测成功',
-                data: faceDescription
+                message: '检测成功'
             });
         } else { // 多张人脸
             res.status(200).send({
                 code: 202,
-                message: '检测到多张脸，请重新上传图片',
-                data: faceDescription,
+                message: '检测到多张脸，请重新上传图片'
             });
         }
     } catch (error) {
         res.status(500).send({
-            code: 202,
-            data: '',
+            code: 500,
             message: error.toString()
         });
     }
 });
-
 module.exports = router;

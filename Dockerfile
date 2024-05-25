@@ -8,7 +8,7 @@ WORKDIR /usr/src/app
 COPY . .
 
 # 安装项目依赖
-RUN npm install
+RUN yarn install
 
 # 暴露项目运行的端口
 EXPOSE 1344
